@@ -271,31 +271,35 @@ void findDistance(float &m, float &c, std::array<float, 8> & y_arr, std::array<f
 	}
 }
 
-void calculate_v(float &v_sum, float &v_sum_square, float &mean_v, float &std_v, std::array<float, 8> &v_arr){
+void calculate_v(float &v_sum, float &v_sum_square, float &mean_v, float &std_v, std::array<float, 8> &t_arr, std::array<float, 8> &v_arr){
 	v_sum = 0;
 	v_sum_square = 0;
-	int size = 8;
+	float total_weight = 0;
+	float min_v = 1000;
+	float max_v = 0;
 	for (int i=0; i < 8; ++i){
-		if (std::isinf(v_arr[i])){
-			size -= 1;
+		if (std::isinf(v_arr[i]) or t_arr[i] < 15){
 			continue;
 		}
-		v_sum += v_arr[i];
-		v_sum_square += (v_arr[i] * v_arr[i]);
+		if (v_arr[i] > max_v){
+			max_v = v_arr[i];	
+		}
+		if (v_arr[i] <  min_v){
+			max_v = v_arr[i];	
+		}
+		v_sum += t_arr[i] * v_arr[i];
+		total_weight += t_arr[i];
 	}
-	mean_v = v_sum/size;
-	std_v = sqrt((v_sum_square/size) - (mean_v * mean_v));
+	mean_v = v_sum/total_weight;
+	std_v = (max_v-min_v)/2;
+	//std_v = sqrt((v_sum_square/size) - (mean_v * mean_v));
 }
 
-void get_fit(std::array<std::array<std::array<float,2>, 2>,7> &pp, std::array<std::array<float,2>, 7> &aPoints, float &m, float &c, int &np){
-	float chi_square = 1000000;
-	int numValidPoints = 7;
-	std::array<bool, 7> validPoints;
-	bool pairChoice;
+void get_fit(std::array<std::array<std::array<float,2>, 2>,7> &pp, std::array<std::array<float,2>, 7> &aPoints, float &m, float &c, int &np, float &chi_square, int &numValidPoints, std::array<bool, 7> &validPoints, bool &pairChoice, float &trial_m, float &trial_c, int &combos, float &sumX, float &sumY, float &sumXY, float &sumX2, float &trial_chi_square, int &k){
 	np = 0;
-	float trial_m;
-	float trial_c;
-	int combos = 1;
+	chi_square = 100;
+	numValidPoints = 7;
+	combos = 1;
 	for (int i=0; i<7; ++i){
 		if (pp[i][0][0] == 0){
 			numValidPoints -= 1;
@@ -306,13 +310,28 @@ void get_fit(std::array<std::array<std::array<float,2>, 2>,7> &pp, std::array<st
 			validPoints[i] = 1;
 		}
 	}
-	//std::cout << "nV" << numValidPoints << " C " << combos;
-	float sumX;
-	float sumY;
-	float sumXY;
-	float sumX2;
-	float trial_chi_square;
-	int k;
+	// points in track
+	int maxPoints = 4;
+	if (numValidPoints > maxPoints){
+		int pointsToRemove = numValidPoints - maxPoints;
+		int j = 0;
+		numValidPoints = maxPoints;
+		int index;
+		while (pointsToRemove > 0) {
+			if ((j%2)  == 0){
+				index = 3 + std::floor((j+1)/2);
+			}
+			else{
+				index = 3 - std::floor((j+1)/2);
+			}
+			if (validPoints[index] == 1){
+				validPoints[index] = 0;
+				pointsToRemove -= 1;
+				combos /=2;
+			}
+			j +=1;
+		}
+	}
 	//std::cout << "\n NEW TRACK ";
 	for (int i=0; i<combos; ++i) {
 		k = 0;
@@ -449,6 +468,20 @@ int main(int argc, char **argv){
 	float beta;
 	int np;
 	auto start = std::chrono::high_resolution_clock::now();	
+
+	float chi_square = 1000000;
+	int numValidPoints = 7;
+	int combos = 1;
+	std::array<bool, 7> validPoints;
+	bool pairChoice;
+	float trial_m;
+	float trial_c;
+	float sumX;
+	float sumY;
+	float sumXY;
+	float sumX2;
+	float trial_chi_square;
+	int k;
 	while ((!file.eof()) & (tracknum <  max_track_num)){
 		//std::cout << "newTrack" << "\n\n\n";
 		ap = {{{0,0},{0,0},{0,0},{0,0}, {0,0}, {0,0}, {0,0}}};
@@ -475,14 +508,14 @@ int main(int argc, char **argv){
 		//std::cout << ap[0][0] << ap[0][0] << "\n";
 		//findFit(ap, m, c);
 		//std::cout << m << "\n";
-		get_fit(pp, ap, m, c, np);
+		get_fit(pp, ap, m, c, np, chi_square, numValidPoints, validPoints, pairChoice, trial_m, trial_c, combos, sumX, sumY, sumXY, sumX2, trial_chi_square, k);
 		findDistance(m, c, y_arr, x_arr, t_arr, v_arr);
-		calculate_v(v_sum, v_sum_square, mean_v, std_v, v_arr);
+		calculate_v(v_sum, v_sum_square, mean_v, std_v,t_arr, v_arr);
 		//		plotData(x_arr, y_arr, t_arr, tracknum, pp);
-		tracknum += 1;
+		//tracknum += 1;
 		beta = atan(m);
-		writeCSV(x_arr, y_arr, t_arr, tracknum, pp, ap);
-		fileParams << mean_v << "," << std_v << "," << beta << "," << beta << ","  << m << "," << c << "," << np << '\n';
+		//writeCSV(x_arr, y_arr, t_arr, tracknum, pp, ap);
+		fileParams << 2*mean_v << "," << 2*std_v << "," << beta << "," << beta << ","  << m << "," << c << "," << np << '\n';
 	}
 	auto end = std::chrono::high_resolution_clock::now();
 	// Calculate the duration in seconds (with decimal places)
