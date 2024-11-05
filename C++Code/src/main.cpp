@@ -2,93 +2,10 @@
 #include <string>
 #include <fstream>
 #include <cstdint>
-#include <TCanvas.h>
-#include <TGraph.h>
-#include <TApplication.h> 
-#include <TArc.h>
-#include <TAxis.h>
 #include <array>
 #include <cmath>
 #include <math.h>    
 #include <chrono>
-
-void plotData(std::array<float, 8>& x_arr, std::array<float, 8>& y_arr, std::array<float, 8>& t_arr,
-		int& tracknum, std::array<std::array<std::array<float,2>, 2>,7> &pp ){
-	//	std::cout << "Plotting Track!i";
-	//	TCanvas *c = new TCanvas(Form("c%d", tracknum), Form("Canvas %d", tracknum), 1080, 1080);
-	//	TGraph *g = new TGraph(8,x_arr.data(),y_arr.data());
-	//	g->SetTitle(Form("Track %d;X pin;Y pin", tracknum));
-	//	g->Draw("AP");
-	//   	g->GetXaxis()->SetLimits(0, 9);
-	//	g->GetYaxis()->SetRangeUser(0, 9); 
-	//	gPad->SetFixedAspectRatio(true);
-	//   	for (int i = 0; i < 8; ++i) {
-	//       		TArc *arc = new TArc(x_arr[i], y_arr[i], t_arr[i]/1000);
-	//       		arc->SetLineColor(kRed);
-	//       		arc->SetFillColor(0);
-	//       		arc->Draw();
-	//   	}
-	//	std::array<float, 14> x_pp;
-	//	std::array<float, 14> y_pp;
-	//	for (int i = 0; i <7; ++i){
-	//		for (int j = 0; j<2; ++j){
-	//			x_pp[i + 7*j] = pp[i][j][0];
-	//			y_pp[i + 7*j] = pp[i][j][1];
-	//		}
-	//	}
-	//	TGraph *g2 = new TGraph(14, x_pp.data(), y_pp.data());
-	//   	g2->SetMarkerColor(kGreen);  // Set different color for second set of points
-	//   	g2->SetMarkerStyle(21);      // Set marker style for second set (optional)
-	//   	g2->Draw("P SAME");          // Draw on the same canvas without overriding
-	//	g2->SetMarkerSize(1.5);
-	std::cout << "Plotting Track " << tracknum << "!" << std::endl;
-
-	// Create a canvas
-
-	TCanvas* c1 = new TCanvas(Form("c1 %d", tracknum), Form("Canvas1 %d", tracknum), 1080, 1080);
-	// Create first graph
-	TGraph* g = new TGraph(8, x_arr.data(), y_arr.data());
-	g->SetTitle(Form("Track %d;X pin;Y pin", tracknum));
-	g->SetMarkerColor(kBlue); // Optional: Set a marker color
-	g->SetMarkerStyle(20);    // Optional: Set marker style
-	g->Draw("AP");
-	//  // Draw arcs
-
-	TCanvas* c2 = new TCanvas(Form("c 2%d", tracknum), Form("Canvas2 %d", tracknum), 1080, 1080);
-	// Create first graph
-	for (int i = 0; i < 8; ++i) {
-		TArc* arc = new TArc(x_arr[i], y_arr[i], t_arr[i] / 1000);
-		arc->SetLineColor(kRed);
-		arc->SetFillColor(0);
-		arc->Draw();
-	}
-	// Set axis limits
-	g->GetXaxis()->SetLimits(0, 9);
-	g->GetYaxis()->SetRangeUser(0, 9);
-	gPad->SetFixedAspectRatio(true);
-	c1->Update();
-	c2->Update(); 
-	// Prepare second set of points
-	TCanvas* c3 = new TCanvas(Form("c3 %d", tracknum), Form("Canvas3 %d", tracknum), 1080, 1080);
-	std::array<float, 14> x_pp;
-	std::array<float, 14> y_pp;
-	for (int i = 0; i < 7; ++i) {
-		for (int j = 0; j < 2; ++j) {
-			x_pp[i + 7 * j] = pp[i][j][0];
-			y_pp[i + 7 * j] = pp[i][j][1];
-			//std::cout << "X: " << x_pp[i+ 7*j] << " Y: " << y_pp[+ + 7*j] << "\n";
-		}
-	}
-
-	// Create second graph with the correct number of points
-	TGraph* g2 = new TGraph(14, x_pp.data(), y_pp.data());
-	g2->SetMarkerColor(kGreen);  // Set color for the second set of points
-	g2->SetMarkerStyle(21);      // Set marker style for the second set (optional)
-	g2->SetMarkerSize(1.5);      // Increase marker size for visibility
-	g2->Draw("AP");          // Draw on the same canvas
-
-	c3->Update();
-}
 
 void possiblePointPair(std::array<std::array<float, 3>,2>& pairData, std::array<std::array<float, 2>,2> &coordPair, 
 					std::array<std::array<std::array<float,2>, 2>,7> &pp, int &i){
